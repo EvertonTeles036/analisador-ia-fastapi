@@ -1,53 +1,14 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Envio de Áudios para Transcrição</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f7f7f7; }
-        h2 { color: #333; }
-        form { margin-bottom: 20px; padding: 15px; background: #fff; border: 1px solid #ccc; border-radius: 5px; }
-        .resultado { margin-top: 15px; padding: 10px; border-radius: 5px; }
-        .erro { background-color: #f8d7da; color: #721c24; }
-        .sucesso { background-color: #d4edda; color: #155724; }
-    </style>
+    <title>Envio de Áudios</title>
 </head>
 <body>
     <h2>Envio Individual de Áudio</h2>
-    <form id="form-individual" action="https://analisador-ia-fastapi-448795037965.us-central1.run.app/transcrever" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
+    <form action="/transcrever" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
         <button type="submit">Enviar</button>
     </form>
-
-    <div id="resposta" class="resultado"></div>
-
-    <script>
-        const form = document.getElementById('form-individual');
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const resposta = document.getElementById('resposta');
-            resposta.textContent = "Enviando...";
-            resposta.className = "resultado";
-
-            try {
-                const r = await fetch(form.action, {
-                    method: "POST",
-                    body: formData
-                });
-                const data = await r.json();
-                if (data.transcricao) {
-                    resposta.className = "resultado sucesso";
-                    resposta.textContent = "Transcrição: " + data.transcricao;
-                } else {
-                    resposta.className = "resultado erro";
-                    resposta.textContent = "Erro: " + JSON.stringify(data);
-                }
-            } catch (err) {
-                resposta.className = "resultado erro";
-                resposta.textContent = "Erro ao enviar: " + err.message;
-            }
-        });
-    </script>
 </body>
 </html>
