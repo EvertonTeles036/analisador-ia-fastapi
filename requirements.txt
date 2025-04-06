@@ -1,7 +1,3 @@
+
 fastapi
 uvicorn
-assemblyai
-pydub
-python-multipart
-reportlab
-aiofiles
