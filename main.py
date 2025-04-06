@@ -1,11 +1,27 @@
-from fastapi import FastAPI, Request
-from analisador import analyze_transcription
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-@app.post("/analisar/")
-async def analisar(request: Request):
-    body = await request.json()
-    texto = body.get("texto", "")
-    resultado = analyze_transcription(texto)
-    return resultado
+# Configuração do CORS (permite requisições de qualquer origem, útil para testes)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/")
+def read_root():
+    return {"mensagem": "API FastAPI rodando com sucesso no Cloud Run!"}
+
+@app.post("/analisar")
+def analisar_texto(texto: str):
+    # Simulação simples de análise
+    if "obrigado" in texto.lower():
+        return {"sentimento": "positivo"}
+    elif "ruim" in texto.lower():
+        return {"sentimento": "negativo"}
+    else:
+        return {"sentimento": "neutro"}
