@@ -1,21 +1,11 @@
-from fpdf import FPDF
-import textwrap
+from datetime import datetime
+import json
+import os
 
-def generate_report(transcription, analysis):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 14)
-    pdf.cell(200, 10, "Relatório de Atendimento com IA", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, f"Transcrição:\n{textwrap.fill(transcription, 100)}")
-    pdf.ln(10)
-    pdf.multi_cell(0, 10, "Análise:")
-    for k, v in analysis.items():
-        if isinstance(v, list):
-            pdf.multi_cell(0, 10, f"{k.capitalize()}: {', '.join(v)}")
-        else:
-            pdf.multi_cell(0, 10, f"{k.capitalize()}: {v}")
-    output_path = "/mnt/data/relatorio_atendimento.pdf"
-    pdf.output(output_path)
-    return output_path
+def gerar_relatorio(dados, pasta="relatorios"):
+    if not os.path.exists(pasta):
+        os.makedirs(pasta)
+    nome_arquivo = f"{pasta}/relatorio_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
+    with open(nome_arquivo, "w", encoding="utf-8") as f:
+        json.dump(dados, f, ensure_ascii=False, indent=4)
+    return nome_arquivo
