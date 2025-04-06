@@ -1,2 +1,3 @@
-def transcribe_audio(audio_bytes):
-    return "Olá, tudo bem? Esse é um exemplo de transcrição automática."
+def transcrever_audio(audio_path):
+    # Simula uma transcrição
+    return "Simulação de transcrição de áudio"
