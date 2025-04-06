@@ -1,25 +1,13 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 
 app = FastAPI()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 @app.get("/")
 def read_root():
-    return {"mensagem": "API FastAPI rodando com sucesso no Cloud Run!"}
+    return {"mensagem": "API no ar e funcionando com FastAPI no Cloud Run"}
 
-@app.post("/analisar")
-def analisar_texto(texto: str):
-    if "obrigado" in texto.lower():
-        return {"sentimento": "positivo"}
-    elif "ruim" in texto.lower():
-        return {"sentimento": "negativo"}
-    else:
-        return {"sentimento": "neutro"}
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 8080))  # pega a porta do Cloud Run
+    uvicorn.run("principal:app", host="0.0.0.0", port=port, reload=False)
