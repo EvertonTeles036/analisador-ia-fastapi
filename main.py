@@ -1,28 +1,14 @@
 from fastapi import FastAPI, UploadFile, File
-from transcriber import transcrever_audio
-from analyzer import analisar_texto
-from reporter import gerar_relatorio
+from transcriber import processar_audio
+from fastapi.responses import FileResponse
 
 app = FastAPI()
 
 @app.get("/")
-def read_root():
-    return {"mensagem": "API de Análise de Áudio rodando com sucesso!"}
+def home():
+    return {"mensagem": "API com AssemblyAI e divisão de áudio ativa."}
 
 @app.post("/transcrever")
 async def transcrever(file: UploadFile = File(...)):
-    audio_bytes = await file.read()
-    resultado = transcrever_audio(audio_bytes)
-    return resultado
-
-@app.post("/analisar")
-def analisar(payload: dict):
-    texto = payload.get("texto", "")
-    resultado = analisar_texto(texto)
-    return resultado
-
-@app.post("/relatorio")
-def relatorio(payload: dict):
-    dados = payload.get("dados", {})
-    resultado = gerar_relatorio(dados)
-    return resultado
+    pdf_path = await processar_audio(file)
+    return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path.split('/')[-1])
