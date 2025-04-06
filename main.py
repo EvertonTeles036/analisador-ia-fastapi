@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# Configuração do CORS (permite requisições de qualquer origem, útil para testes)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,7 +17,6 @@ def read_root():
 
 @app.post("/analisar")
 def analisar_texto(texto: str):
-    # Simulação simples de análise
     if "obrigado" in texto.lower():
         return {"sentimento": "positivo"}
     elif "ruim" in texto.lower():
