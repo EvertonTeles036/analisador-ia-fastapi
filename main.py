@@ -2,12 +2,12 @@ from fastapi import FastAPI
 import uvicorn
 import os
 
-app = FastAPI()
+aplicativo = FastAPI()
 
-@app.get("/")
-def read_root():
+@aplicativo.get("/")
+def ler_raiz():
     return {"mensagem": "API FastAPI rodando com sucesso no Cloud Run!"}
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    porta = int(os.environ.get("PORT", 8080))
+    uvicorn.run("principal:aplicativo", host="0.0.0.0", port=porta)
