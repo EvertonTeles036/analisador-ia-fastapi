@@ -1,2 +1,3 @@
-def gerar_relatorio(dados):
-    return {"relatorio": f"Relatório gerado com sucesso: {dados}"}
+
+def gerar_relatorio(texto):
+    return {"relatorio": f"Relatório simulado com sucesso para: {texto}"}
