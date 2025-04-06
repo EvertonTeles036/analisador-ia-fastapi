@@ -1,4 +1,9 @@
+
 def analisar_texto(texto):
-    if not texto:
-        return {"erro": "Texto vazio"}
-    return {"resposta": f"Análise feita com sucesso para: {texto}"}
+    return {
+        "pontos_positivos": ["Atendimento cordial", "Boa escuta"],
+        "pontos_melhoria": ["Faltou frase de fechamento", "Interrompeu o cliente"],
+        "emocao_predominante": "Neutro",
+        "nota": 7.5,
+        "justificativa": "Atendimento funcional, mas faltou conexão emocional."
+    }
