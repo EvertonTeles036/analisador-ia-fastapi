@@ -11,12 +11,18 @@ def read_root():
 
 @app.post("/transcrever")
 async def transcrever(file: UploadFile = File(...)):
-    return await transcrever_audio(file)
+    audio_bytes = await file.read()
+    resultado = transcrever_audio(audio_bytes)
+    return resultado
 
 @app.post("/analisar")
-def analisar(texto: str):
-    return analisar_texto(texto)
+def analisar(payload: dict):
+    texto = payload.get("texto", "")
+    resultado = analisar_texto(texto)
+    return resultado
 
 @app.post("/relatorio")
-def relatorio(texto: str):
-    return gerar_relatorio(texto)
+def relatorio(payload: dict):
+    dados = payload.get("dados", {})
+    resultado = gerar_relatorio(dados)
+    return resultado

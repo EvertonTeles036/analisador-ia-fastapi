@@ -1,6 +1,3 @@
 fastapi
 uvicorn
-ffmpeg-python
-openai-whisper
-transformers
-torch
+python-multipart
