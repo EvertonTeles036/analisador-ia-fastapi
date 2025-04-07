@@ -4,3 +4,5 @@ assemblyai
 python-multipart
 jinja2
 google-cloud-storage
+python-dotenv
+fpdf
