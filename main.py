@@ -3,54 +3,54 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from google.cloud import storage
-import os
-from typing import List
-from datetime import datetime
+import uuid
 
 app = FastAPI()
 
-# Configuração de arquivos estáticos
+# Diretório de arquivos estáticos (CSS, imagens etc.)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Templates
+# Diretório de templates HTML
 templates = Jinja2Templates(directory="templates")
 
-# Nome do bucket no Google Cloud Storage
-BUCKET_NAME = "audios-atendimentos-minhaempresa"
+# Nome do bucket do Google Cloud Storage
+BUCKET_NAME = 'audios-atendimentos-minhaempresa'  # Altere para o nome exato do seu bucket
 
-# Inicializar cliente do Google Cloud Storage
-storage_client = storage.Client()
-
-# Página principal
+# Página principal que renderiza o formulário
 @app.get("/", response_class=HTMLResponse)
 async def form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Rota para upload de 1 arquivo (individual)
+# Rota para upload individual
 @app.post("/upload_single")
-async def upload_single_file(file: UploadFile = File(...)):
-    # Definindo nome do arquivo com timestamp para evitar conflitos
-    blob_name = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{file.filename}"
-    # Escolhendo o bucket do Cloud Storage
-    bucket = storage_client.bucket(BUCKET_NAME)
-    blob = bucket.blob(blob_name)
-    # Realizando o upload do arquivo
+async def upload_single(file: UploadFile = File(...)):
+    # Verificando o tamanho do arquivo (limite de 10MB, por exemplo)
+    if file.size > 10 * 1024 * 1024:  # 10MB
+        return {"message": "O arquivo é muito grande, máximo permitido é 10MB"}
+    
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    blob = bucket.blob(file.filename)
     blob.upload_from_file(file.file, content_type=file.content_type)
-    return {"mensagem": f"Arquivo {blob_name} enviado com sucesso."}
+    
+    return {"message": f"Arquivo {file.filename} enviado com sucesso."}
 
-# Rota para upload de múltiplos arquivos
+# Rota para upload múltiplo
 @app.post("/upload_multiple")
-async def upload_multiple_files(files: List[UploadFile] = File(...)):
-    filenames = []
-    # Escolhendo o bucket do Cloud Storage
-    bucket = storage_client.bucket(BUCKET_NAME)
-
+async def upload_multiple(files: list[UploadFile] = File(...)):
+    # Verificando se algum arquivo é maior que 10MB
     for file in files:
-        # Definindo nome do arquivo com timestamp para evitar conflitos
-        blob_name = f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{file.filename}"
-        # Realizando o upload do arquivo
-        blob = bucket.blob(blob_name)
+        if file.size > 10 * 1024 * 1024:  # 10MB
+            return {"message": f"O arquivo {file.filename} é muito grande, máximo permitido é 10MB"}
+    
+    filenames = []
+    client = storage.Client()
+    bucket = client.bucket(BUCKET_NAME)
+    
+    for file in files:
+        file_filename = str(uuid.uuid4()) + "-" + file.filename  # Gerando nome único para o arquivo
+        blob = bucket.blob(file_filename)
         blob.upload_from_file(file.file, content_type=file.content_type)
-        filenames.append(blob_name)
-
-    return {"mensagem": "Arquivos enviados com sucesso.", "arquivos": filenames}
+        filenames.append(file_filename)
+    
+    return {"message": "Arquivos enviados com sucesso", "filenames": filenames}
