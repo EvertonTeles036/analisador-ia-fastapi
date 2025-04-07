@@ -1,50 +1,101 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Envio de Áudios para Transcrição</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f0f0;
-            padding: 20px;
-        }
-        h2 {
-            color: #333;
-        }
-        form {
-            background: #fff;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-        }
-        input[type="file"] {
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Envio de Áudios para Transcrição</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      padding: 40px;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 40px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    input[type="file"] {
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #004cc7;
+    }
+    .progress-container {
+      width: 100%;
+      background-color: #eee;
+      border-radius: 4px;
+      margin-top: 10px;
+      height: 20px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #4caf50;
+      width: 0%;
+      transition: width 0.2s;
+    }
+  </style>
 </head>
 <body>
-    <h2>Envio Individual de Áudio</h2>
-    <form action="/upload_single" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept="audio/*" required>
-        <button type="submit">Enviar</button>
-    </form>
 
-    <h2>Envio Múltiplo de Áudios (até 30 arquivos)</h2>
-    <form action="/upload_multiple" method="post" enctype="multipart/form-data">
-        <input type="file" name="files" accept="audio/*" multiple required>
-        <button type="submit">Enviar</button>
-    </form>
+  <h2>Upload Individual de Áudio</h2>
+  <form id="form-single">
+    <input type="file" name="file" accept="audio/*" required>
+    <button type="submit">Enviar</button>
+    <div class="progress-container"><div class="progress-bar" id="progress-single"></div></div>
+  </form>
+
+  <h2>Upload Múltiplo de Áudios (até 5 arquivos)</h2>
+  <form id="form-multiple">
+    <input type="file" name="files" multiple accept="audio/*" required>
+    <button type="submit">Enviar</button>
+    <div class="progress-container"><div class="progress-bar" id="progress-multiple"></div></div>
+  </form>
+
+  <script>
+    function upload(formId, endpoint, progressId) {
+      const form = document.getElementById(formId);
+      const progressBar = document.getElementById(progressId);
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+
+        xhr.open('POST', endpoint, true);
+
+        xhr.upload.onprogress = function (event) {
+          if (event.lengthComputable) {
+            const percent = (event.loaded / event.total) * 100;
+            progressBar.style.width = percent + '%';
+          }
+        };
+
+        xhr.onload = function () {
+          if (xhr.status === 200) {
+            alert("Upload concluído!");
+          } else {
+            alert("Erro no upload.");
+          }
+        };
+
+        xhr.send(formData);
+      });
+    }
+
+    upload('form-single', '/upload_single', 'progress-single');
+    upload('form-multiple', '/upload_multiple', 'progress-multiple');
+  </script>
+
 </body>
 </html>
