@@ -9,7 +9,9 @@
             background: #f0f0f0;
             padding: 20px;
         }
-        h2 { color: #333; }
+        h2 {
+            color: #333;
+        }
         form {
             background: #fff;
             padding: 20px;
@@ -21,7 +23,7 @@
         }
         button {
             padding: 10px 20px;
-            background: #007BFF;
+            background: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
@@ -39,7 +41,7 @@
         <button type="submit">Enviar</button>
     </form>
 
-    <h2>Envio Múltiplo de Áudios (até 50 arquivos)</h2>
+    <h2>Envio Múltiplo de Áudios (até 30 arquivos)</h2>
     <form action="/upload_multiple" method="post" enctype="multipart/form-data">
         <input type="file" name="files" accept="audio/*" multiple required>
         <button type="submit">Enviar</button>
