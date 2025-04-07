@@ -4,24 +4,40 @@
     <meta charset="UTF-8">
     <title>Envio de Áudios para Transcrição</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-        h2 { color: #333; }
-        form { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
-        input[type="file"] { margin-bottom: 10px; }
-        button { padding: 10px 20px; background: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #0056b3; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
     </style>
 </head>
 <body>
-    <h2>Envio Individual de Áudio</h2>
-    <form action="/upload_single" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" required>
-        <button type="submit">Enviar</button>
-    </form>
-
-    <h2>Envio Múltiplo de Áudios (até 50 arquivos)</h2>
-    <form action="/upload_multiple" method="post" enctype="multipart/form-data">
-        <input type="file" name="files" multiple required>
+    <h2>Envio de Áudio para Transcrição</h2>
+    <form action="/upload" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="audio/*" required>
         <button type="submit">Enviar</button>
     </form>
 </body>
