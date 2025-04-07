@@ -6,23 +6,23 @@ from typing import List
 
 app = FastAPI()
 
-# Arquivos estáticos (CSS, imagens, etc)
+# Arquivos estáticos (CSS, imagens etc)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates HTML
 templates = Jinja2Templates(directory="templates")
 
-# Rota principal que renderiza o formulário HTML
+# Rota principal (renderiza o HTML)
 @app.get("/", response_class=HTMLResponse)
-async def render_form(request: Request):
+async def form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Rota para upload de um único áudio
+# Rota para upload individual
 @app.post("/upload_single")
 async def upload_single(file: UploadFile = File(...)):
     return {"filename": file.filename}
 
-# Rota para upload múltiplo de áudios
+# Rota para upload múltiplo
 @app.post("/upload_multiple")
 async def upload_multiple(files: List[UploadFile] = File(...)):
     filenames = [file.filename for file in files]
