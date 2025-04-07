@@ -17,6 +17,6 @@ async def form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 # Rota POST que recebe o upload de áudio
-@app.post("/upload")
+@app.post("/upload_single")
 async def upload_audio(file: UploadFile = File(...)):
     return {"filename": file.filename}
