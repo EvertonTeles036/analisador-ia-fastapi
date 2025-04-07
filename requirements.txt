@@ -1,3 +1,5 @@
 fastapi
 uvicorn
+assemblyai
+python-multipart
 jinja2
