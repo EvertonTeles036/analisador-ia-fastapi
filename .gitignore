@@ -1,1 +1,31 @@
+# Ignora variáveis de ambiente sensíveis
 .env
+
+# __pycache__ e arquivos de cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+
+# Arquivos de configurações locais
+.vscode/
+*.swp
+
+# Arquivos temporários
+*.tmp
+*.bak
+
+# Arquivos gerados automaticamente
+*.pdf
+output/
+
+# Sistema do MacOS
+.DS_Store
+
+# Diretórios ocultos ou de build
+build/
+dist/
+.venv/
+.env/
