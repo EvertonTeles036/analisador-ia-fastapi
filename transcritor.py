@@ -1,27 +1,61 @@
-
 import requests
 import time
 import os
+from fpdf import FPDF
 
-ASSEMBLYAI_API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
+# Insira sua chave da AssemblyAI
+API_KEY_ASSEMBLYAI = "d7f4166d1399467a95aac2d8ef4e8421"
+HEADERS = {
+    "authorization": API_KEY_ASSEMBLYAI,
+    "content-type": "application/json"
+}
 
-def transcribe_from_gcs(gcs_url):
-    headers = {
-        "authorization": ASSEMBLYAI_API_KEY,
-        "content-type": "application/json"
-    }
-    json = {
-        "audio_url": gcs_url,
-        "auto_chapters": False
-    }
-    response = requests.post("https://api.assemblyai.com/v2/transcript", json=json, headers=headers)
+# Cria pasta local para PDF (se não existir)
+os.makedirs("pdfs", exist_ok=True)
+
+def transcrever_audio(nome_arquivo, url_audio):
+    print(f"Iniciando transcrição do arquivo: {nome_arquivo}")
+
+    # Envia URL para AssemblyAI
+    response = requests.post(
+        "https://api.assemblyai.com/v2/transcript",
+        headers=HEADERS,
+        json={"audio_url": url_audio, "language_code": "pt"}
+    )
+
+    if response.status_code != 200:
+        raise Exception(f"Erro ao iniciar transcrição: {response.text}")
+
     transcript_id = response.json()["id"]
 
+    # Consulta até a transcrição estar pronta
     while True:
-        polling_response = requests.get(f"https://api.assemblyai.com/v2/transcript/{transcript_id}", headers=headers)
-        status = polling_response.json()["status"]
+        status_response = requests.get(
+            f"https://api.assemblyai.com/v2/transcript/{transcript_id}",
+            headers=HEADERS
+        )
+        status = status_response.json()["status"]
         if status == "completed":
-            return polling_response.json()["text"]
+            break
         elif status == "error":
-            return f"Erro: {polling_response.json()['error']}"
+            raise Exception(f"Erro na transcrição: {status_response.json()['error']}")
         time.sleep(5)
+
+    texto = status_response.json()["text"]
+
+    # Geração do PDF com mesmo nome do áudio
+    nome_pdf = nome_arquivo.rsplit(".", 1)[0] + ".pdf"
+    caminho_pdf = os.path.join("pdfs", nome_pdf)
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    linhas = texto.split("\n")
+    for linha in linhas:
+        pdf.multi_cell(0, 10, linha)
+
+    pdf.output(caminho_pdf)
+
+    print(f"Transcrição salva em: {caminho_pdf}")
+    return nome_pdf
