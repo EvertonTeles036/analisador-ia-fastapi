@@ -1,101 +1,124 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Envio de Áudios para Transcrição</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
-      padding: 40px;
-    }
-    form {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 40px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    input[type="file"] {
-      margin-bottom: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background-color: #0066ff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #004cc7;
-    }
-    .progress-container {
-      width: 100%;
-      background-color: #eee;
-      border-radius: 4px;
-      margin-top: 10px;
-      height: 20px;
-      overflow: hidden;
-    }
-    .progress-bar {
-      height: 100%;
-      background-color: #4caf50;
-      width: 0%;
-      transition: width 0.2s;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Upload Inteligente para Transcrição</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 30px;
+        }
+        h2 {
+            color: #333;
+        }
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .progress {
+            width: 100%;
+            background: #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            height: 20px;
+            background: #28a745;
+            width: 0%;
+            text-align: center;
+            color: white;
+            transition: width 0.3s ease;
+        }
+        .status {
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>Upload Individual de Áudio</h2>
-  <form id="form-single">
-    <input type="file" name="file" accept="audio/*" required>
-    <button type="submit">Enviar</button>
-    <div class="progress-container"><div class="progress-bar" id="progress-single"></div></div>
-  </form>
+<h2>Upload de Áudio para Transcrição com GCS</h2>
 
-  <h2>Upload Múltiplo de Áudios (até 5 arquivos)</h2>
-  <form id="form-multiple">
-    <input type="file" name="files" multiple accept="audio/*" required>
-    <button type="submit">Enviar</button>
-    <div class="progress-container"><div class="progress-bar" id="progress-multiple"></div></div>
-  </form>
+<input type="file" id="audioFile" accept="audio/*" required>
+<br>
+<button onclick="enviarArquivo()">Enviar para o GCS</button>
 
-  <script>
-    function upload(formId, endpoint, progressId) {
-      const form = document.getElementById(formId);
-      const progressBar = document.getElementById(progressId);
+<div class="progress" id="progressContainer" style="display:none;">
+    <div class="progress-bar" id="progressBar">0%</div>
+</div>
 
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const xhr = new XMLHttpRequest();
+<div class="status" id="status"></div>
 
-        xhr.open('POST', endpoint, true);
-
-        xhr.upload.onprogress = function (event) {
-          if (event.lengthComputable) {
-            const percent = (event.loaded / event.total) * 100;
-            progressBar.style.width = percent + '%';
-          }
-        };
-
-        xhr.onload = function () {
-          if (xhr.status === 200) {
-            alert("Upload concluído!");
-          } else {
-            alert("Erro no upload.");
-          }
-        };
-
-        xhr.send(formData);
-      });
+<script>
+async function enviarArquivo() {
+    const input = document.getElementById('audioFile');
+    const file = input.files[0];
+    if (!file) {
+        alert("Selecione um arquivo de áudio.");
+        return;
     }
 
-    upload('form-single', '/upload_single', 'progress-single');
-    upload('form-multiple', '/upload_multiple', 'progress-multiple');
-  </script>
+    const status = document.getElementById('status');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+
+    status.innerText = "Solicitando URL segura...";
+    progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    progressBar.innerText = "0%";
+
+    // Requisição da URL assinada
+    const resposta = await fetch(`/gerar_signed_url?filename=${file.name}`);
+    const { url } = await resposta.json();
+
+    // Enviar para o GCS
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url, true);
+    xhr.setRequestHeader("Content-Type", file.type);
+
+    xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percent + "%";
+            progressBar.innerText = percent + "%";
+        }
+    };
+
+    xhr.onload = async () => {
+        if (xhr.status === 200) {
+            progressBar.style.background = "#28a745";
+            progressBar.innerText = "100%";
+
+            // Após upload, inicia transcrição
+            status.innerText = "Upload concluído! Iniciando transcrição...";
+            const response = await fetch(`/transcrever?filename=${file.name}`);
+            const dados = await response.json();
+            status.innerHTML = `<br>Transcrição finalizada.<br><a href="${dados.pdf_url}" target="_blank">Clique aqui para baixar o PDF</a>`;
+        } else {
+            status.innerText = "Erro no envio para o GCS.";
+            progressBar.style.background = "#dc3545";
+        }
+    };
+
+    xhr.onerror = () => {
+        status.innerText = "Erro durante o upload.";
+        progressBar.style.background = "#dc3545";
+    };
+
+    xhr.send(file);
+}
+</script>
 
 </body>
 </html>
