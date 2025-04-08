@@ -75,7 +75,7 @@ async def form():
     """
 
 # ROTA FINAL: Geração da signed URL usando identidade padrão
-@app.get("/gerar_signed_url")
+@app.get("/gerar_signed_url/")
 async def gerar_signed_url(filename: str):
     try:
         BUCKET_NAME = "audios-atendimentos-minhaempresa"  # nome correto do seu bucket
