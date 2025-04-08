@@ -97,3 +97,32 @@ def gerar_signed_url(filename: str):
     except Exception as e:
         print(f"[ERRO] Falha ao gerar URL assinada: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from google.cloud import storage
+from datetime import timedelta
+import os
+
+app = FastAPI()
+
+# Nome do bucket vindo da variável de ambiente
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
+
+@app.get("/gerar_signed_url")
+async def gerar_signed_url(filename: str):
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(BUCKET_NAME)
+        blob = bucket.blob(filename)
+
+        url = blob.generate_signed_url(
+            version="v4",
+            expiration=timedelta(minutes=15),
+            method="PUT",
+            content_type="application/octet-stream"
+        )
+
+        return {"url": url}
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"erro": str(e)})
