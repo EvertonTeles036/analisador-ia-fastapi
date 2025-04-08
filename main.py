@@ -5,8 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from google.cloud import storage
+from google.oauth2 import service_account
 from datetime import timedelta
-from pathlib import Path
 
 # Carregar variáveis do .env
 load_dotenv()
@@ -33,36 +33,39 @@ async def form():
         <head><title>Upload de Áudio para Transcrição com GCS</title></head>
         <body>
             <h2>Upload de Áudio para Transcrição com GCS</h2>
-            <form id="uploadForm" enctype="multipart/form-data">
+            <form id="uploadform" enctype="multipart/form-data">
                 <input name="file" type="file"/>
                 <button type="button" onclick="uploadFile()">Enviar para o GCS</button>
             </form>
             <div id="status"></div>
+
             <script>
                 async function uploadFile() {
                     const input = document.querySelector('input[type="file"]');
                     const file = input.files[0];
                     if (!file) return;
 
+                    document.getElementById("status").innerText = "Solicitando URL segura...";
+
                     const response = await fetch(`/gerar_signed_url?filename=${file.name}`);
                     const data = await response.json();
-                    if (!data.url) {
-                        document.getElementById("status").innerText = "Erro ao obter URL assinada.";
-                        return;
-                    }
 
-                    const upload = await fetch(data.url, {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type": file.type
-                        },
-                        body: file
-                    });
+                    if (data.url) {
+                        const upload = await fetch(data.url, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": file.type
+                            },
+                            body: file
+                        });
 
-                    if (upload.ok) {
-                        document.getElementById("status").innerText = "Upload concluído com sucesso!";
+                        if (upload.ok) {
+                            document.getElementById("status").innerText = "Upload concluído com sucesso!";
+                        } else {
+                            document.getElementById("status").innerText = "Erro no envio para o GCS.";
+                        }
                     } else {
-                        document.getElementById("status").innerText = "Erro no envio para o GCS.";
+                        document.getElementById("status").innerText = "Erro ao obter URL assinada.";
                     }
                 }
             </script>
@@ -70,48 +73,14 @@ async def form():
     </html>
     """
 
-# NOVA ROTA adicionada: Geração de Signed URL
-@app.get("/gerar_signed_url")
-def gerar_signed_url(filename: str):
-    try:
-        print(f"[DEBUG] Rota /gerar_signed_url chamada com filename: {filename}")
-
-        bucket_name = os.getenv("BUCKET_NAME")
-        if not bucket_name:
-            return JSONResponse(status_code=500, content={"error": "BUCKET_NAME não configurado"})
-
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        blob = bucket.blob(filename)
-
-        url = blob.generate_signed_url(
-            version="v4",
-            expiration=timedelta(minutes=10),
-            method="PUT",
-            content_type="application/octet-stream"
-        )
-
-        print(f"[DEBUG] URL assinada gerada: {url}")
-        return {"url": url}
-
-    except Exception as e:
-        print(f"[ERRO] Falha ao gerar URL assinada: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
-from google.cloud import storage
-from datetime import timedelta
-import os
-
-app = FastAPI()
-
-# Nome do bucket vindo da variável de ambiente
-BUCKET_NAME = os.environ.get("BUCKET_NAME")
-
+# ROTA FINAL: Geração da Signed URL com credenciais e bucket fixo
 @app.get("/gerar_signed_url")
 async def gerar_signed_url(filename: str):
     try:
-        storage_client = storage.Client()
+        BUCKET_NAME = "audios-atendimentos-minhaempresa"  # Nome correto do seu bucket
+        CREDENTIALS = service_account.Credentials.from_service_account_file("chave.json")
+
+        storage_client = storage.Client(credentials=CREDENTIALS)
         bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(filename)
 
@@ -125,26 +94,5 @@ async def gerar_signed_url(filename: str):
         return {"url": url}
 
     except Exception as e:
-        return JSONResponse(status_code=500, content={"erro": str(e)})from google.cloud import storage
-from google.oauth2 import service_account
-import datetime
+        return JSONResponse(status_code=500, content={"error": f"Erro ao gerar URL assinada: {str(e)}"})
 
-@app.get("/gerar_signed_url")
-def gerar_signed_url(filename: str):
-    try:
-        BUCKET_NAME = "audios-atendimentos-minhaempresa"  # Nome correto do seu bucket
-        CREDENTIALS = service_account.Credentials.from_service_account_file("chave.json")
-        storage_client = storage.Client(credentials=CREDENTIALS)
-        bucket = storage_client.bucket(BUCKET_NAME)
-        blob = bucket.blob(filename)
-
-        url = blob.generate_signed_url(
-            version="v4",
-            expiration=datetime.timedelta(minutes=15),
-            method="PUT",
-            content_type="application/octet-stream",
-        )
-        return {"url": url}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao gerar URL assinada: {str(e)}")
