@@ -1,0 +1,4 @@
+# Exemplo de variáveis para rodar localmente
+ASSEMBLYAI_API_KEY=sua-chave-assembly-ai
+OPENAI_API_KEY=sua-chave-openai
+SECRET_KEY=chave-interna-de-seguranca
