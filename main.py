@@ -1,86 +1,78 @@
 import os
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, Request, Form
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from google.cloud import storage
-from datetime import datetime
 from dotenv import load_dotenv
+from datetime import timedelta
+import requests
 
-# Carregar variáveis locais (usado apenas em testes locais)
+# Carrega variáveis de ambiente
 load_dotenv()
-
-# Carregar variáveis do ambiente do container (Cloud Run)
-BUCKET_NAME = os.getenv("BUCKET_NAME")
-print(f"DEBUG: Bucket definido como: {BUCKET_NAME}")
 
 app = FastAPI()
 
-# Permitir CORS (origens cruzadas)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
-# Página HTML simples
+BUCKET_NAME = os.getenv("BUCKET_NAME")
+
 @app.get("/", response_class=HTMLResponse)
-async def home():
-    return """
-    <h2>Upload de Áudio para Transcrição com GCS</h2>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept="audio/*" required>
-        <button type="submit">Enviar para o GCS</button>
-    </form>
-    """
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-# Upload de um único arquivo
-@app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    try:
-        print(f"DEBUG: Iniciando upload do arquivo: {file.filename}")
-        contents = await file.read()
-        filename = datetime.now().strftime("%Y%m%d%H%M%S") + "-" + file.filename
-        print(f"DEBUG: Nome final do arquivo gerado: {filename}")
-
-        client = storage.Client()
-        print("DEBUG: Cliente GCS criado")
-
-        bucket = client.bucket(BUCKET_NAME)
-        print(f"DEBUG: Bucket acessado: {bucket.name}")
-
-        blob = bucket.blob(filename)
-        blob.upload_from_string(contents, content_type=file.content_type)
-        print("DEBUG: Upload realizado com sucesso!")
-
-        return {
-            "mensagem": "Upload realizado com sucesso!",
-            "arquivo": filename
-        }
-
-    except Exception as e:
-        print(f"ERRO: Falha no upload - {str(e)}")
-        return JSONResponse(content={"erro": f"Erro no upload para o GCS: {str(e)}"}, status_code=500)
-
-# Geração de URL assinada (GET temporário)
 @app.get("/gerar_signed_url")
-def gerar_signed_url(filename: str):
-    try:
-        print(f"DEBUG: Solicitada URL assinada para: {filename}")
+async def gerar_signed_url(filename: str):
+    print(f"DEBUG: Rota acionada para gerar signed URL do arquivo: {filename}")
+    bucket_name = os.getenv("BUCKET_NAME")
+    print(f"DEBUG: Bucket name: {bucket_name}")
 
+    if not bucket_name:
+        return JSONResponse(status_code=500, content={"message": "BUCKET_NAME não configurado"})
+
+    try:
         client = storage.Client()
-        bucket = client.bucket(BUCKET_NAME)
+        bucket = client.bucket(bucket_name)
         blob = bucket.blob(filename)
 
         url = blob.generate_signed_url(
             version="v4",
-            expiration=3600,
-            method="GET"
+            expiration=timedelta(minutes=15),
+            method="PUT",
+            content_type="application/octet-stream"
         )
-        print(f"DEBUG: URL assinada gerada com sucesso: {url}")
 
-        return {"signed_url": url}
-
+        print(f"DEBUG: URL assinada gerada: {url}")
+        return {"url": url}
     except Exception as e:
-        print(f"ERRO: Falha ao gerar URL - {str(e)}")
-        return JSONResponse(content={"erro": f"Erro ao gerar URL assinada: {str(e)}"}, status_code=500)
+        print(f"ERRO ao gerar signed URL: {str(e)}")
+        return JSONResponse(status_code=500, content={"message": f"Erro ao gerar signed URL: {str(e)}"})
+
+@app.post("/upload/")
+async def upload_file(file: UploadFile):
+    try:
+        contents = await file.read()
+        filename = file.filename
+        bucket_name = BUCKET_NAME
+
+        print(f"DEBUG: Iniciando upload para bucket {bucket_name} com arquivo {filename}")
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        blob = bucket.blob(filename)
+        blob.upload_from_string(contents)
+
+        print(f"DEBUG: Upload concluído: {filename}")
+        return {"message": f"Arquivo {filename} enviado com sucesso para o bucket {bucket_name}!"}
+    except Exception as e:
+        print(f"ERRO no upload: {str(e)}")
+        return {"message": f"Erro ao fazer upload: {str(e)}"}
+
+@app.post("/enviar_formulario")
+async def enviar_formulario(nome: str = Form(...), email: str = Form(...)):
+    print(f"Formulário recebido - Nome: {nome}, Email: {email}")
+    return {"message": "Formulário recebido com sucesso", "nome": nome, "email": email}
+
+@app.get("/teste")
+async def teste():
+    return {"status": "ok"}
