@@ -1,27 +1,24 @@
 import os
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, UploadFile, File
 from fastapi.responses import HTMLResponse
 from google.cloud import storage
 from datetime import datetime
 
 app = FastAPI()
 
-# Caminho fixo da chave de autenticação (ajuste se necessário)
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/home/seu-usuario/nome-da-chave.json"
-
-# Nome do bucket fixo
+# Nome do bucket
 BUCKET_NAME = "audios-atendimentos-minhaempresa"
 
 @app.get("/", response_class=HTMLResponse)
-async def index():
+def form():
     return """
     <html>
         <head>
-            <title>Upload de Áudio</title>
+            <title>Upload de Áudio para Transcrição com GCS</title>
         </head>
         <body>
-            <h1>Upload de Áudio para Transcrição com GCS</h1>
-            <form action="/upload" enctype="multipart/form-data" method="post">
+            <h3>Upload de Áudio para Transcrição com GCS</h3>
+            <form action="/upload/" enctype="multipart/form-data" method="post">
                 <input name="file" type="file">
                 <input type="submit" value="Enviar para o GCS">
             </form>
@@ -29,24 +26,30 @@ async def index():
     </html>
     """
 
-@app.post("/upload")
+@app.post("/upload/")
 async def upload(file: UploadFile = File(...)):
     try:
+        # Lê o conteúdo do arquivo enviado
         contents = await file.read()
 
-        # Criação do nome único para o arquivo
+        # Gera um nome único baseado na data e hora
         now = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-        filename = f"{now}-{file.filename}"
+        filename = f"{now}_{file.filename}"
 
-        # Inicialização do cliente GCS
+        # Inicializa o cliente do Google Cloud Storage
         client = storage.Client()
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(filename)
 
-        # Upload do conteúdo
+        # Faz o upload para o GCS
         blob.upload_from_string(contents, content_type=file.content_type)
 
-        return {"mensagem": "Upload realizado com sucesso!", "arquivo": filename}
+        return {
+            "message": "Upload realizado com sucesso!",
+            "arquivo": filename
+        }
 
     except Exception as e:
-        return {"erro": str(e)}
+        return {
+            "erro": f"Erro no upload para o GCS: {str(e)}"
+        }
