@@ -30,57 +30,60 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def form():
     return """
     <html>
-    <head><title>Upload de Áudio para Transcrição com GCS</title></head>
-    <body>
-        <h2>Upload de Áudio para Transcrição com GCS</h2>
-        <form id="uploadform" enctype="multipart/form-data">
-            <input name="file" type="file">
-            <button type="button" onclick="uploadFile()">Enviar para o GCS</button>
-        </form>
-        <div id="status"></div>
+        <head><title>Upload de Áudio para Transcrição com GCS</title></head>
+        <body>
+            <h2>Upload de Áudio para Transcrição com GCS</h2>
+            <form id="uploadform" enctype="multipart/form-data">
+                <input name="file" type="file">
+                <button type="button" onclick="uploadFile()">Enviar para o GCS</button>
+            </form>
+            <div id="status"></div>
+        </body>
         <script>
             async function uploadFile() {
                 const input = document.querySelector('input[type="file"]');
                 const file = input.files[0];
                 if (!file) return;
 
-                document.getElementById("status").innerText = "Solicitando URL segura...";
+                document.getElementById('status').innerText = 'Solicitando URL segura...';
 
+                // Solicitar URL assinada para o arquivo
                 const response = await fetch(`/gerar_signed_url?filename=${file.name}`);
                 const data = await response.json();
 
                 if (data.url) {
+                    // Enviar o arquivo para o GCS
                     const upload = await fetch(data.url, {
-                        method: "PUT",
+                        method: 'PUT',
                         headers: {
-                            "Content-Type": file.type
+                            'Content-Type': file.type
                         },
                         body: file
                     });
 
                     if (upload.ok) {
-                        document.getElementById("status").innerText = "Upload concluído com sucesso!";
+                        document.getElementById('status').innerText = 'Upload concluído com sucesso!';
                     } else {
-                        document.getElementById("status").innerText = "Erro no envio para o GCS.";
+                        document.getElementById('status').innerText = 'Erro no envio para o GCS';
                     }
                 } else {
-                    document.getElementById("status").innerText = "Erro ao obter URL assinada.";
+                    document.getElementById('status').innerText = 'Erro ao obter URL assinada';
                 }
             }
         </script>
-    </body>
     </html>
     """
 
-# ROTA FINAL: Geração da Signed URL usando identidade padrão
+# ROTA FINAL: Geração da signed URL usando identidade padrão
 @app.get("/gerar_signed_url")
-def gerar_signed_url(filename: str):
+async def gerar_signed_url(filename: str):
     try:
         BUCKET_NAME = "audios-atendimentos-minhaempresa"  # nome correto do seu bucket
         storage_client = storage.Client()
         bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(filename)
 
+        # Gerar signed URL
         url = blob.generate_signed_url(
             version="v4",
             expiration=timedelta(minutes=15),
@@ -91,5 +94,5 @@ def gerar_signed_url(filename: str):
         return {"url": url}
 
     except Exception as e:
-        print(f"[ERRO] Falha ao gerar URL assinada: {e}")
-        return JSONResponse(status_code=500, content={"erro": str(e)})
+        print(f"[ERROR] Falha ao gerar URL assinada: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
