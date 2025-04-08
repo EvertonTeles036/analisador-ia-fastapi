@@ -1,19 +1,19 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Variável de ambiente para desativar o buffer do Python (log imediato)
+# Desativa o buffer do Python para logs em tempo real
 ENV PYTHONUNBUFFERED=1
 
-# Instala dependências do sistema
+# Instala dependências do sistema (inclui suporte a libffi, útil para algumas libs como cryptography)
 RUN apt-get update && apt-get install -y gcc libffi-dev
 
-# Define diretório de trabalho
+# Cria diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos para dentro do container
-COPY . /app
+# Copia todos os arquivos do projeto, incluindo o .env
+COPY . .
 
-# Instala as bibliotecas do projeto
+# Instala bibliotecas
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Comando para rodar o app
+# Comando para rodar o servidor
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
