@@ -30,15 +30,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 async def form():
     return """
     <html>
-        <head><title>Upload de Áudio para Transcrição com GCS</title></head>
-        <body>
-            <h2>Upload de Áudio para Transcrição com GCS</h2>
-            <form id="uploadform" enctype="multipart/form-data">
-                <input name="file" type="file">
-                <button type="button" onclick="uploadFile()">Enviar para o GCS</button>
-            </form>
-            <div id="status"></div>
-        </body>
+    <head><title>Upload de Áudio para Transcrição com GCS</title></head>
+    <body>
+        <h2>Upload de Áudio para Transcrição com GCS</h2>
+        <form id="uploadform" enctype="multipart/form-data">
+            <input name="file" type="file">
+            <button type="button" onclick="uploadFile()">Enviar para o GCS</button>
+        </form>
+        <div id="status"></div>
         <script>
             async function uploadFile() {
                 const input = document.querySelector('input[type="file"]');
@@ -47,12 +46,10 @@ async def form():
 
                 document.getElementById('status').innerText = 'Solicitando URL segura...';
 
-                // Solicitar URL assinada para o arquivo
-                const response = await fetch(`/gerar_signed_url?filename=${file.name}`);
+                const response = await fetch('/gerar_signed_url?filename=' + file.name);
                 const data = await response.json();
 
                 if (data.url) {
-                    // Enviar o arquivo para o GCS
                     const upload = await fetch(data.url, {
                         method: 'PUT',
                         headers: {
@@ -64,21 +61,22 @@ async def form():
                     if (upload.ok) {
                         document.getElementById('status').innerText = 'Upload concluído com sucesso!';
                     } else {
-                        document.getElementById('status').innerText = 'Erro no envio para o GCS';
+                        document.getElementById('status').innerText = 'Erro no envio para o GCS.';
                     }
                 } else {
-                    document.getElementById('status').innerText = 'Erro ao obter URL assinada';
+                    document.getElementById('status').innerText = 'Erro ao obter URL assinada.';
                 }
             }
         </script>
+    </body>
     </html>
     """
 
 # ROTA FINAL: Geração da signed URL usando identidade padrão
-@app.get("/gerar_signed_url/")
+@app.get("/gerar_signed_url")  # <- Removido a barra final
 async def gerar_signed_url(filename: str):
     try:
-        BUCKET_NAME = "audios-atendimentos-minhaempresa"  # nome correto do seu bucket
+        BUCKET_NAME = "audios-atendimentos-minhaempresa"  # <- Nome correto do seu bucket
         storage_client = storage.Client()
         bucket = storage_client.bucket(BUCKET_NAME)
         blob = bucket.blob(filename)
@@ -92,7 +90,7 @@ async def gerar_signed_url(filename: str):
         )
 
         return {"url": url}
-
     except Exception as e:
-        print(f"[ERROR] Falha ao gerar URL assinada: {e}")
+        print(f"[ERRO] Falha ao gerar URL assinada: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
