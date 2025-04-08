@@ -1,8 +1,8 @@
 fastapi
 uvicorn
-assemblyai
 python-multipart
 jinja2
 google-cloud-storage
+openai
 python-dotenv
 fpdf
