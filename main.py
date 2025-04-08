@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, Request, UploadFile, File, Form, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,7 +46,7 @@ async def form():
 
                 document.getElementById('status').innerText = 'Solicitando URL segura...';
 
-                const response = await fetch('/gerar_signed_url?filename=' + file.name);
+                const response = await fetch(`/gerar_signed_url?filename=` + file.name);
                 const data = await response.json();
 
                 if (data.url) {
@@ -73,8 +73,8 @@ async def form():
     """
 
 # ROTA FINAL: Geração da signed URL usando identidade padrão
-@app.get("/gerar_signed_url")  # <- Removido a barra final
-async def gerar_signed_url(filename: str):
+@app.get("/gerar_signed_url")
+async def gerar_signed_url(filename: str = Query(...)):
     try:
         BUCKET_NAME = "audios-atendimentos-minhaempresa"  # <- Nome correto do seu bucket
         storage_client = storage.Client()
@@ -90,7 +90,9 @@ async def gerar_signed_url(filename: str):
         )
 
         return {"url": url}
+    
     except Exception as e:
         print(f"[ERRO] Falha ao gerar URL assinada: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 
