@@ -2,50 +2,83 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Envio de Áudios para Transcrição</title>
+    <title>Upload de Áudio para Transcrição com GCS</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 40px;
+            padding: 40px;
         }
-        h2 {
-            color: #333;
-        }
-        form {
-            margin-bottom: 20px;
-        }
-        input[type="file"] {
+
+        input, button {
+            margin-bottom: 10px;
             padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            font-size: 16px;
         }
+
         button {
-            padding: 10px 20px;
-            background-color: #005eb8;
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
+
         button:hover {
-            background: #003f88;
+            background-color: #0056b3;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+    <h1>Upload de Áudio para Transcrição com GCS</h1>
 
-    <h2>Envio Individual de Áudio</h2>
-    <form action="/upload/" method="post" enctype="multipart/form-data">
-        <input type="file" name="file" accept="audio/*" required>
-        <button type="submit">Enviar</button>
-    </form>
+    <input type="file" id="fileInput" accept="audio/*">
+    <br>
+    <button onclick="enviarParaGCS()">Enviar para o GCS</button>
 
-    <h2>Envio Múltiplo de Áudios (até 30 arquivos)</h2>
-    <form action="/upload-multiple/" method="post" enctype="multipart/form-data">
-        <input type="file" name="files" accept="audio/*" multiple required>
-        <button type="submit">Enviar</button>
-    </form>
+    <div id="status"></div>
 
+    <script>
+        async function enviarParaGCS() {
+            const fileInput = document.getElementById("fileInput");
+            const status = document.getElementById("status");
+
+            if (!fileInput.files.length) {
+                status.innerText = "Selecione um arquivo de áudio.";
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            // Etapa 1 – Requisição da URL assinada para upload
+            const response = await fetch(`/gerar_signed_url?filename=${file.name}`);
+            if (!response.ok) {
+                status.innerText = "Erro ao gerar URL assinada.";
+                return;
+            }
+
+            const data = await response.json();
+            const signedUrl = data.url;
+
+            // Etapa 2 – Upload do arquivo diretamente para a URL assinada
+            const upload = await fetch(signedUrl, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": file.type
+                },
+                body: file
+            });
+
+            if (upload.ok) {
+                status.innerText = "Upload realizado com sucesso!";
+            } else {
+                status.innerText = "Erro no envio para o GCS.";
+            }
+        }
+    </script>
 </body>
 </html>
