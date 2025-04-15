@@ -85,7 +85,7 @@ async def gerar_signed_url(filename: str = Query(...)):
             version="v4",
             expiration=timedelta(minutes=15),
             method="PUT",
-            content_type="application/octet-stream"
+            content_type="audio/x-m4a"
         )
 
         return {"url": url}
