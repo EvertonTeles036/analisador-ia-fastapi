@@ -46,7 +46,8 @@ async def form():
 
                 document.getElementById('status').innerText = 'Solicitando URL segura...';
 
-                const response = await fetch('/gerar_signed_url?filename=' + file.name);
+                const response = await fetch('https://analisador-ia-fastapi-448795037965.us-central1.run.app/gerar_signed_url?filename=' + file.name)
+
                 const data = await response.json();
 
                 if (data.url) {
