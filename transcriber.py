@@ -1,7 +1,13 @@
 import os
+from dotenv import load_dotenv
 import assemblyai as aai
 
-aai.settings.api_key = "d7f4166d1399467a95aac2d8ef4e8421"
+load_dotenv()
+API_KEY = os.getenv("ASSEMBLYAI_API_KEY")
+if not API_KEY:
+    raise ValueError("ASSEMBLYAI_API_KEY não definido nas variáveis de ambiente")
+
+aai.settings.api_key = API_KEY
 
 async def transcribe_audio(file):
     path = f"temp_{file.filename}"
